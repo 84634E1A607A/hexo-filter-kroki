@@ -32,10 +32,25 @@ hexoWrapper.register(
         const mergedCfg = Object.assign(render.config, {
             server: "https://kroki.io",
             // the img generated will have a default class name.
-            className: defaultConfig
+            className: defaultConfig,
+            darkClassName: defaultConfig + "-dark",
         }, hexo.config[defaultConfig])
-        diagram = render.decorateDiagram(mergedCfg, diagType, diagram);
-        var realUrl = makeURL(mergedCfg.server, diagType, mergedCfg.outputFormat, diagram);
-        return render.serverSideRendering(mergedCfg, realUrl)
+        diagram_light = render.decorateDiagram(mergedCfg, diagType, diagram);
+        var realUrlLight = makeURL(mergedCfg.server, diagType, mergedCfg.outputFormat, diagram_light);
+        var promiseLight = render.serverSideRendering(mergedCfg, realUrlLight, false);
+
+        if (!mergedCfg.darkModeEnabled) {
+            return promiseLight
+        }
+
+        diagram_dark = render.decorateDiagram(mergedCfg, diagType + "-dark", diagram, hexo);
+        var realUrlDark = makeURL(mergedCfg.server, diagType, mergedCfg.outputFormat, diagram_dark);
+        var promiseDark = render.serverSideRendering(mergedCfg, realUrlDark, true);
+
+        var promise_return = Promise.all([promiseLight, promiseDark]).then((results) => {
+            return results[0] + results[1]
+        })
+
+        return promise_return
     }
 )
